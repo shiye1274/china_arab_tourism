@@ -1,0 +1,44 @@
+{
+  "total_records": 184,
+  "language_check": {
+    "en": {
+      "label": "英语",
+      "n": 37,
+      "lang_agreement_rate": 1.0,
+      "detected_distribution": {
+        "en": 37
+      }
+    },
+    "zh": {
+      "label": "中文",
+      "n": 89,
+      "lang_agreement_rate": 1.0,
+      "detected_distribution": {
+        "zh": 89
+      }
+    },
+    "ar": {
+      "label": "阿拉伯语",
+      "n": 58,
+      "lang_agreement_rate": 0.9483,
+      "detected_distribution": {
+        "ar": 55,
+        "en": 3
+      }
+    }
+  },
+  "relevance": {
+    "records_with_zero_keyword_hit": 141,
+    "zero_hit_ratio": 0.7663,
+    "mean_hits_per_record": 0.23
+  },
+  "duplicates": {
+    "flagged_pairs_or_chains": 0,
+    "example_indices": []
+  },
+  "doi_crossref_check": {
+    "checked": 0,
+    "resolved_ok": 0,
+    "failed": []
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "years": "2010-2026",
+  "requested_per_lang": 15,
+  "langs": {
+    "en": {
+      "label": "英语",
+      "dedup_total": 346
+    },
+    "zh": {
+      "label": "中文",
+      "dedup_total": 238
+    },
+    "ar": {
+      "label": "阿拉伯语",
+      "dedup_total": 224
+    }
+  },
+  "balanced_n_per_lang": 15,
+  "availability": {
+    "en": 346,
+    "zh": 238,
+    "ar": 224
+  }
+}

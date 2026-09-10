@@ -1,0 +1,23 @@
+{
+  "years": "2010-2026",
+  "relation": "relaxed",
+  "requested_per_lang": 3000,
+  "langs": {
+    "ar": {
+      "label": "阿拉伯语",
+      "dedup_total": 6208,
+      "relation_kept": 3429,
+      "relation_dropped": 2779,
+      "relation_sides": {
+        "china_only": 44,
+        "arab_only": 3294,
+        "both": 91,
+        "neither": 2779
+      }
+    }
+  },
+  "balanced_n_per_lang": 3000,
+  "availability": {
+    "ar": 3429
+  }
+}

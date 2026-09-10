@@ -1,0 +1,49 @@
+{
+  "years": "2010-2026",
+  "relation": "strict",
+  "requested_per_lang": 20,
+  "langs": {
+    "en": {
+      "label": "英语",
+      "dedup_total": 380,
+      "relation_kept": 37,
+      "relation_dropped": 343,
+      "relation_sides": {
+        "china_only": 25,
+        "arab_only": 26,
+        "both": 37,
+        "neither": 292
+      }
+    },
+    "zh": {
+      "label": "中文",
+      "dedup_total": 341,
+      "relation_kept": 89,
+      "relation_dropped": 252,
+      "relation_sides": {
+        "china_only": 61,
+        "arab_only": 0,
+        "both": 89,
+        "neither": 191
+      }
+    },
+    "ar": {
+      "label": "阿拉伯语",
+      "dedup_total": 232,
+      "relation_kept": 58,
+      "relation_dropped": 174,
+      "relation_sides": {
+        "china_only": 25,
+        "arab_only": 92,
+        "both": 58,
+        "neither": 57
+      }
+    }
+  },
+  "balanced_n_per_lang": 20,
+  "availability": {
+    "en": 37,
+    "zh": 89,
+    "ar": 58
+  }
+}
