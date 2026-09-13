@@ -1,0 +1,32 @@
+{
+  "total_records": 3500,
+  "language_check": {
+    "en": {
+      "label": "英语",
+      "n": 3500,
+      "lang_agreement_rate": 1.0,
+      "detected_distribution": {
+        "en": 3500
+      }
+    }
+  },
+  "relevance": {
+    "records_with_zero_keyword_hit": 0,
+    "zero_hit_ratio": 0.0,
+    "mean_hits_per_record": 0.21,
+    "marker_based": {
+      "records_with_marker_fields": 3500,
+      "passed_own_inclusion_rule": 3500,
+      "pass_rate": 1.0
+    }
+  },
+  "duplicates": {
+    "flagged_pairs_or_chains": 0,
+    "example_indices": []
+  },
+  "doi_crossref_check": {
+    "checked": 40,
+    "resolved_ok": 40,
+    "failed": []
+  }
+}

@@ -62,6 +62,36 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "oa_cache")
 # 每门语言一组短语。英文/阿语短语交给 API 做精确短语匹配；中文短语在本地做子串包含判断。
 KEYWORDS = {
     "en": [
+        # ==== 第一层：多词 AND 检索（前缀 "!" = 不加引号，OpenAlex 隐式 AND）====
+        # 这是英文双边文献的主力召回层，故排在最前（脚本有总量上限，先跑先占）。
+        # 实测：精确短语 "China Arab tourism" 仅 0 条，隐式 AND 命中 107 条。
+        "!china arab tourism",
+        "!china arab cultural tourism",
+        "!china arab cooperation",
+        "!chinese arab tourism",
+        "!chinese tourism arab",
+        "!sino-arab",
+        "!china gulf tourism",
+        "!china saudi tourism",
+        "!china emirates tourism",
+        "!china egypt tourism",
+        "!chinese tourists gulf",
+        "!chinese tourists middle east",
+        "!china middle east tourism",
+        "!china arab cultural exchange",
+        "!china arab heritage",
+        "!belt and road tourism",
+        "!belt and road arab",
+        "!belt and road cultural heritage",
+        "!silk road tourism china",
+        "!silk road heritage tourism",
+        "!arab tourism china",
+        "!arab tourists china",
+        "!arab countries tourism cooperation",
+        "!halal tourism china",
+        "!islamic tourism china",
+        "!arab cultural heritage tourism",
+        # ==== 第二层：精确短语检索 ====
         "cultural tourism",
         "China Arab tourism",
         "Sino-Arab tourism",
@@ -495,18 +525,25 @@ def work_to_record(w, matched, fetch_abstract=False, abstract_timeout=30):
 
 # ---------------- 抓取实现 ----------------
 def fetch_via_phrase_search(lang, keywords, years, cap_per_keyword, mailto=DEFAULT_MAILTO,
-                           fetch_abstract=False, abstract_timeout=30, abstract_delay=1.0):
+                           fetch_abstract=False, abstract_timeout=30, abstract_delay=1.0,
+                           pages_per_keyword=50):
     """按语言逐短语精确检索 title+abstract，取并集。
     注意：实测 OpenAlex 对中文/阿拉伯文短语检索均有效（如 language:zh + "文化旅游"）。"""
     hits = {}  # id -> (record, [kw...])
     for kw in keywords:
-        f = f'language:{lang},title_and_abstract.search:"{kw}"'
+        # 前缀 "!" = 不加引号，交给 OpenAlex 做隐式 AND 多词检索（召回双边文献主力）；
+        # 其余关键词仍走精确短语检索。
+        if kw.startswith("!"):
+            term, matched_kw = kw[1:].strip(), kw[1:].strip()
+        else:
+            term, matched_kw = f'"{kw}"', kw
+        f = f'language:{lang},title_and_abstract.search:{term}'
         if years:
             f += f",publication_year:{years}"
-        url = (f"{API}?filter={urllib.parse.quote(f)}"
+        url = (f"{API}?filter={urllib.parse.quote(f, safe=':')}"
                f"&per-page={PER_PAGE}&mailto={mailto}&cursor=*")
         page = 0
-        while url and page < 50:  # 每个短语最多翻 50 页(=PER_PAGE*50 条)
+        while url and page < pages_per_keyword:  # 每个短语最多翻 pages_per_keyword 页
             data = http_get_json(url)
             for w in data.get("results", []):
                 wid = w["id"]
@@ -514,7 +551,7 @@ def fetch_via_phrase_search(lang, keywords, years, cap_per_keyword, mailto=DEFAU
                     hits[wid] = (work_to_record(w, [],
                                fetch_abstract=fetch_abstract,
                                abstract_timeout=abstract_timeout), [])
-                hits[wid][1].append(kw)
+                hits[wid][1].append(matched_kw)
             page += 1
             cursor = (data.get("meta") or {}).get("next_cursor")
             url = None if not cursor else url.replace("cursor=*", f"cursor={cursor}")
@@ -537,6 +574,12 @@ def main():
                          "relaxed=含任一方即可; off=仅按话题词不过滤")
     ap.add_argument("--mailto", default=None, help="OpenAlex 礼貌池邮箱(默认取文件顶部常量)")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--keywords-json", default=None,
+                    help="外部检索词表 JSON（形如 {\"en\":[...],\"zh\":[...],\"ar\":[...]}），"
+                         "提供时覆盖内置 KEYWORDS；可用前缀 '!' 表示多词隐式 AND 检索")
+    ap.add_argument("--pages-per-keyword", type=int, default=50,
+                    help="每个检索词最多翻多少页（200/页）。调小可让多个词均衡贡献，"
+                         "避免热门词独占语料池；默认 50")
     # ── 全文摘要抓取 ──
     ap.add_argument("--fetch-abstract", action="store_true",
                     help="启用全文摘要抓取（从HTML/PDF提取，需安装 beautifulsoup4 requests PyPDF2）")
@@ -546,6 +589,11 @@ def main():
                     help="摘要抓取请求间隔（秒），默认1.0")
     args = ap.parse_args()
     mailto = args.mailto or DEFAULT_MAILTO
+
+    if args.keywords_json:
+        with open(args.keywords_json, encoding="utf-8") as f:
+            KEYWORDS.update(json.load(f))
+        print(f"[词表] 已加载外部检索词表: {args.keywords_json}")
 
     random.seed(args.seed)
     os.makedirs(os.path.join(args.outdir, "raw"), exist_ok=True)
@@ -563,7 +611,8 @@ def main():
         recs = fetch_via_phrase_search(lang, kws, args.years, args.per_lang, mailto=mailto,
                                       fetch_abstract=args.fetch_abstract,
                                       abstract_timeout=args.abstract_timeout,
-                                      abstract_delay=args.abstract_delay)
+                                      abstract_delay=args.abstract_delay,
+                                      pages_per_keyword=args.pages_per_keyword)
         # 去重（同标题/同 DOI 视为重复）
         seen_t, seen_d, uniq = set(), set(), []
         for r in sorted(recs, key=lambda x: -(x.get("cited_by_count") or 0)):

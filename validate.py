@@ -35,7 +35,17 @@ DOI_RE = re.compile(r"10\.\d{4,9}/[^\s\"']+")
 KEYWORDS = {
     "en": ["cultural tourism", "China Arab tourism", "sino-arab tourism", "belt and road tourism",
            "silk road tourism", "china arab cultural exchange", "arab heritage tourism",
-           "islamic tourism", "halal tourism", "heritage tourism china"],
+           "islamic tourism", "halal tourism", "heritage tourism china",
+           # 与 fetch_papers.py 的多词 AND 检索层保持一致（前缀 "!"）
+           "!china arab tourism", "!china arab cultural tourism", "!china arab cooperation",
+           "!chinese arab tourism", "!chinese tourism arab", "!sino-arab",
+           "!china gulf tourism", "!china saudi tourism", "!china emirates tourism",
+           "!china egypt tourism", "!chinese tourists gulf", "!chinese tourists middle east",
+           "!china middle east tourism", "!china arab cultural exchange", "!china arab heritage",
+           "!belt and road tourism", "!belt and road arab", "!belt and road cultural heritage",
+           "!silk road tourism china", "!silk road heritage tourism", "!arab tourism china",
+           "!arab tourists china", "!arab countries tourism cooperation", "!halal tourism china",
+           "!islamic tourism china", "!arab cultural heritage tourism"],
     "zh": ["文化旅游", "文旅融合", "中阿旅游", "中阿文旅", "阿拉伯旅游", "阿拉伯国家旅游",
            "一带一路旅游", "丝绸之路旅游", "文化遗产旅游", "出入境旅游"],
     "ar": ["السياحة", "التراث الثقافي", "المتاحف", "التنمية السياحية", "صناعة السياحة",
@@ -72,6 +82,9 @@ def normalize_title(t):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="data", help="fetch_papers.py 的 --outdir")
+    ap.add_argument("--source-file", default=None,
+                    help="直接校验某个 jsonl（如 data_en_crossref/combined.jsonl）。"
+                         "不填则读 <data>/raw/{en,zh,ar}.jsonl")
     ap.add_argument("--crossref-sample", type=int, default=30, help="抽多少篇去 Crossref 验 DOI")
     ap.add_argument("--review-per-lang", type=int, default=15, help="人工抽检每语言多少篇")
     ap.add_argument("--seed", type=int, default=7)
@@ -79,14 +92,21 @@ def main():
     random.seed(args.seed)
 
     rows = []
-    for lang, label in LANG_LABEL.items():
-        p = os.path.join(args.data, "raw", f"{lang}.jsonl")
-        if not os.path.exists(p):
-            continue
-        with open(p, encoding="utf-8") as f:
+    out_dir = os.path.dirname(args.source_file) if args.source_file else args.data
+    if args.source_file:
+        with open(args.source_file, encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     rows.append(json.loads(line))
+    else:
+        for lang, label in LANG_LABEL.items():
+            p = os.path.join(args.data, "raw", f"{lang}.jsonl")
+            if not os.path.exists(p):
+                continue
+            with open(p, encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        rows.append(json.loads(line))
 
     if not rows:
         print("没有找到 raw/*.jsonl，请先运行 fetch_papers.py")
@@ -108,17 +128,32 @@ def main():
         r["lang_consistent"] = (det == gl)
 
     # ---- 2) 主题相关度：命中短语数（独立复算，非抓取时记录的） ----
+    def _kw_hit(kw, text):
+        """复算单个检索词是否命中。前缀 '!' 表示多为隐式 AND 检索：
+        要求所有词元（≥3 字符）都出现在文本中，避免长词表整体子串匹配失效。"""
+        if kw.startswith("!"):
+            toks = [t for t in re.split(r"[\s\-]+", kw[1:].lower()) if len(t) >= 3]
+            return bool(toks) and all(t in text for t in toks)
+        return kw in text
+
     for r in rows:
         text = ((r.get("title") or "") + " " + (r.get("abstract") or "")).lower()
         kws = KEYWORDS.get(r.get("query_language"), [])
-        if r.get("query_language") == "zh":
-            hits = [k for k in kws if k in text]
-        else:
-            hits = [k for k in kws if k in text]
+        hits = [k for k in kws if _kw_hit(k, text)]
+        # Crossref 通道：记录自带确定性标记命中（中国侧/阿拉伯侧/文旅话题词），
+        # 这才是该语料真正的纳入依据（见 fetch_en_crossref.py），故独立统计。
+        rel = r.get("relevance")
+        if rel:
+            marker = {k: rel.get(k, []) for k in ("china", "arab", "topic")}
+            r["marker_hits"] = marker
+            r["marker_ok"] = bool(marker["topic"]) and (bool(marker["china"]) or bool(marker["arab"]))
         r["relevance_hits"] = hits
         r["relevance_hit_count"] = len(hits)
 
-    zero_hit = [r for r in rows if r["relevance_hit_count"] == 0]
+    marker_rows = [r for r in rows if "marker_ok" in r]
+    marker_ok = [r for r in marker_rows if r["marker_ok"]]
+    zero_hit = [r for r in rows
+                if r["relevance_hit_count"] == 0 and r.get("marker_ok") is not True]
     lang_inconsistent = [r for r in rows if not r["lang_consistent"]]
 
     # ---- 3) 查重（标题 + DOI 双通道，跨语言也算） ----
@@ -179,6 +214,11 @@ def main():
             "records_with_zero_keyword_hit": len(zero_hit),
             "zero_hit_ratio": round(len(zero_hit) / len(rows), 4) if rows else None,
             "mean_hits_per_record": round(sum(r["relevance_hit_count"] for r in rows) / len(rows), 2) if rows else 0,
+            "marker_based": {
+                "records_with_marker_fields": len(marker_rows),
+                "passed_own_inclusion_rule": len(marker_ok),
+                "pass_rate": round(len(marker_ok) / len(marker_rows), 4) if marker_rows else None,
+            } if marker_rows else None,
         },
         "duplicates": {"flagged_pairs_or_chains": len(dup_groups), "example_indices": dup_groups[:20]},
         "doi_crossref_check": {
@@ -187,13 +227,13 @@ def main():
             "failed": crossref_fail[:20],
         },
     }
-    with open(os.path.join(args.data, "validation_report.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(out_dir, "validation_report.json"), "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
     # ---- 人工抽检表：每语言随机 N 篇，含摘要前 200 字，方便逐条读 ----
-    review_fields = ["query_language", "lang_consistent", "script_detected_lang",
-                     "relevance_hit_count", "relevance_hits", "title", "year", "venue",
-                     "authors", "doi", "openalex_url", "abstract_snippet"]
+    review_fields = ["query_language", "tier", "relation_sides", "marker_ok", "lang_consistent",
+                     "script_detected_lang", "relevance_hit_count", "relevance_hits", "title",
+                     "year", "type_label", "venue", "authors", "doi", "url", "abstract_snippet"]
     review_rows = []
     by_lang = defaultdict(list)
     for r in rows:
@@ -203,7 +243,7 @@ def main():
             rr = dict(r)
             rr["abstract_snippet"] = (r.get("abstract") or "")[:200]
             review_rows.append(rr)
-    with open(os.path.join(args.data, "manual_review_sample.csv"), "w",
+    with open(os.path.join(out_dir, "manual_review_sample.csv"), "w",
               encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=review_fields, extrasaction="ignore")
         w.writeheader()
@@ -218,9 +258,14 @@ def main():
     print(f"相关度: 平均每篇命中 {report['relevance']['mean_hits_per_record']} 条短语；"
           f"0 命中记录 {report['relevance']['records_with_zero_keyword_hit']} 条 "
           f"({report['relevance']['zero_hit_ratio']})")
+    if report["relevance"].get("marker_based"):
+        mb = report["relevance"]["marker_based"]
+        print(f"纳入规则自检: 带标记字段 {mb['records_with_marker_fields']} 条，"
+              f"通过「话题词+中/阿侧」规则 {mb['passed_own_inclusion_rule']} 条 "
+              f"(通过率 {mb['pass_rate']})")
     print(f"查重: 疑似重复 {len(dup_groups)} 组")
     print(f"DOI抽查: {crossref_ok}/{len(sample)} 在 Crossref 真实存在")
-    print(f"人工抽检表 -> {os.path.join(args.data, 'manual_review_sample.csv')}")
+    print(f"人工抽检表 -> {os.path.join(out_dir, 'manual_review_sample.csv')}")
     if zero_hit:
         print("\n!! 注意以下记录 0 短语命中（可能跑题，建议人工确认后剔除）:")
         for r in zero_hit[:10]:
