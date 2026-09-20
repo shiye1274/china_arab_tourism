@@ -1,0 +1,19 @@
+{
+  "inputs": {
+    "data_en_crossref/raw/en.jsonl": 7151,
+    "data/raw/en.jsonl": 4017,
+    "data/raw/en_filtered.jsonl": 1985
+  },
+  "input_raw_total": 13153,
+  "total_dedup": 10735,
+  "dimension_coverage": {
+    "cn_ok": 9233,
+    "ar_ok": 8459,
+    "tourism_ok": 9712
+  },
+  "pass_all_three": 6916,
+  "pass_strong_tourism": 6611,
+  "pass_weak_tourism_only": 305,
+  "cn_ar_but_no_tourism": 733,
+  "pass_rate_of_dedup": 0.6442
+}
