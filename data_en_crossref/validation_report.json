@@ -13,7 +13,7 @@
   "relevance": {
     "records_with_zero_keyword_hit": 0,
     "zero_hit_ratio": 0.0,
-    "mean_hits_per_record": 0.21,
+    "mean_hits_per_record": 0.23,
     "marker_based": {
       "records_with_marker_fields": 3500,
       "passed_own_inclusion_rule": 3500,

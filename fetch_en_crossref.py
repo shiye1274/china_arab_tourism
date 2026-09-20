@@ -74,6 +74,8 @@ ARAB_MARKERS = [
     "comoros", "gulf", "middle east", "mecca", "medina", "makkah", "riyadh", "doha",
     "cairo", "muscat", "manama", "amman", "rabat", "tunis", "algiers", "baghdad",
     "damascus", "beirut", "halal", "islamic", "muslim",
+    # PLAN：阿拉伯侧补充
+    "gcc", "gulf cooperation council",
 ]
 # 文旅话题词（标题必须命中至少一个，才算「文旅」语料）
 TOPIC_MARKERS = [
@@ -146,6 +148,23 @@ def build_queries():
         "China Middle East tourism development", "China Arab civilization exchange tourism",
         "Chinese investment Arab tourism", "China Arab tourism policy",
         "Arab countries tourism China", "China Arab friendship tourism",
+    ]
+    # 3) PLAN_重新抓取.md 的英文 5 组统一词表（G1-G5）
+    qs += [
+        # G1 一带一路 / 丝绸之路
+        "Belt and Road Initiative", "Belt and Road tourism",
+        "silk road tourism", "Silk Road cultural heritage",
+        # G2 中阿关系 / 合作
+        "China Arab cooperation", "Sino-Arab cooperation",
+        "China Arab relations", "Sino-Arab relations", "China GCC cooperation",
+        # G3 中阿旅游
+        "China Arab tourism", "Sino-Arab tourism",
+        "China Arab tourists", "China Middle East tourism",
+        # G4 文化交流 / 遗产
+        "China Arab cultural exchange", "Sino-Arab cultural exchange",
+        "Belt and Road cultural cooperation",
+        # G5 清真 / 宗教旅游
+        "halal tourism", "Islamic tourism", "religious tourism",
     ]
     # 去重保序
     seen, out = set(), []

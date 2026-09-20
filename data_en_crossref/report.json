@@ -3,70 +3,70 @@
   "note": "OpenAlex 当日额度耗尽(429, retry-after≈17h)，改用 Crossref 通道",
   "years": "2010-2026",
   "target": 3500,
-  "queries": 214,
+  "queries": 228,
   "rows_per_query": 500,
   "filter_stats": {
-    "raw_items": 107000,
-    "type_dropped": 4587,
-    "lang_dropped": 53,
+    "raw_items": 114000,
+    "type_dropped": 4792,
+    "lang_dropped": 61,
     "year_dropped": 0,
-    "topic_dropped": 54125,
-    "dupe_dropped": 41876
+    "topic_dropped": 58644,
+    "dupe_dropped": 43352
   },
   "pool": {
-    "strict_both": 172,
-    "relaxed_china_only": 2947,
-    "relaxed_arab_only": 3240,
-    "after_dedup_total": 6359
+    "strict_both": 198,
+    "relaxed_china_only": 3456,
+    "relaxed_arab_only": 3497,
+    "after_dedup_total": 7151
   },
   "final_total": 3500,
   "final_by_tier": {
-    "relaxed": 3328,
-    "strict": 172
+    "relaxed": 3302,
+    "strict": 198
   },
   "final_by_type": {
-    "期刊论文": 2904,
-    "图书章节": 339,
-    "会议论文": 103,
-    "预印本": 51,
-    "专著": 37,
-    "图书": 36,
-    "编著": 20,
-    "参考条目": 6,
-    "报告": 2,
-    "参考书": 2
+    "期刊论文": 2940,
+    "图书章节": 309,
+    "会议论文": 101,
+    "预印本": 55,
+    "专著": 34,
+    "图书": 33,
+    "编著": 17,
+    "参考条目": 9,
+    "报告": 1,
+    "参考书": 1
   },
   "final_by_year": {
-    "2010": 64,
-    "2011": 63,
-    "2012": 76,
-    "2013": 91,
-    "2014": 87,
-    "2015": 120,
-    "2016": 116,
-    "2017": 178,
+    "2010": 59,
+    "2011": 59,
+    "2012": 69,
+    "2013": 86,
+    "2014": 83,
+    "2015": 113,
+    "2016": 110,
+    "2017": 169,
     "2018": 211,
-    "2019": 247,
-    "2020": 302,
-    "2021": 291,
-    "2022": 327,
-    "2023": 343,
+    "2019": 242,
+    "2020": 295,
+    "2021": 280,
+    "2022": 326,
+    "2023": 342,
     "2024": 362,
-    "2025": 397,
-    "2026": 225
+    "2025": 434,
+    "2026": 260
   },
   "final_by_sides": {
-    "china": 1996,
-    "arab": 1332,
-    "both": 172
+    "china": 1981,
+    "arab": 1321,
+    "both": 198
   },
   "final_by_grade": {
-    "C_单边_文旅核心": 3158,
-    "D_单边_弱文旅": 170,
-    "A_双边_文旅核心": 89,
-    "B_双边_弱文旅": 83
+    "C_单边_文旅核心": 3105,
+    "D_单边_弱文旅": 197,
+    "B_双边_弱文旅": 101,
+    "A_双边_文旅核心": 97
   },
-  "with_abstract": 1990,
-  "abstract_trimmed_mixed": 19,
+  "with_abstract": 2157,
+  "abstract_trimmed_mixed": 22,
   "with_doi": 3500
 }
